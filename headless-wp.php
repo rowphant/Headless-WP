@@ -5,7 +5,7 @@ Description: This plugin was created to optimize Wordpress for use with SPA fram
 Plugin URI: https://github.com/rowphant/WP-Headless
 Version: 0.0.1
 Requires at least: 6.0
-License: GPLv2 or later
+License: MIT
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires PHP: 7.0
 Author: Robert Metzner
@@ -15,6 +15,19 @@ Author: Robert Metzner
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Update Checker
+require 'plugin-update-checker/plugin-update-checker.php';
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$myUpdateChecker = PucFactory::buildUpdateChecker(
+	'https://github.com/rowphant/Headless-WP/',
+	__FILE__,
+	'headless-wp'
+);
+
+//Set the branch that contains the stable release.
+$myUpdateChecker->setBranch('master');
 
 // Einbinden der Klassen
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-user-registration.php';
