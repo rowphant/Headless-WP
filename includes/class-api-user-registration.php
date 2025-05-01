@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Register a new user
  * 
@@ -11,7 +12,8 @@
  * @return array $args.
  **/
 
-class HWP_User_Register {
+class HWP_User_Register
+{
     public function __construct()
     {
         add_action('rest_api_init', array($this, 'register_endpoint'));
@@ -30,8 +32,8 @@ class HWP_User_Register {
         $response = array();
         $error = new WP_Error();
 
-        $username = $request['username'];
-        $email = $request['email'];
+        $username = sanitize_user($request['username']);
+        $email    = sanitize_email($request['email']);
         $password = $request['password'];
         // $role = sanitize_text_field($parameters['role']);
 
@@ -62,6 +64,7 @@ class HWP_User_Register {
         // }
 
         $user_id = username_exists($username);
+
         if (!$user_id && email_exists($email) == false) {
 
             // Create new user in Wordpress
@@ -81,7 +84,7 @@ class HWP_User_Register {
                 }
                 // Ger User Data (Non-Sensitive, Pass to front end.)
                 $response['code'] = 200;
-                $response['message'] = __("User '" . $username . "' Registration was Successful", "wp-rest-user");
+                $response['message'] = __("Registration was Successful", "wp-rest-user");
             } else {
                 return $user_id;
             }
@@ -92,4 +95,3 @@ class HWP_User_Register {
         return new WP_REST_Response($response, 123);
     }
 }
-
