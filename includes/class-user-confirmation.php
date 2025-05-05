@@ -72,7 +72,7 @@ class HWP_User_Confirmation
         $users_can_register = get_option('users_can_register');
 
         if ($users_can_register) {
-            register_rest_route('wp/v2', 'confirm', array(
+            register_rest_route('wp/v2', 'confirm-user', array(
                 'methods' => 'POST',
                 'callback' => array($this, 'headless_wp_user_confirmation'),
             ));
