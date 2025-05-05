@@ -3,7 +3,7 @@
 Plugin Name: Headless WP
 Description: This plugin was created to optimize Wordpress for use with SPA frameworks like react, vue.js, angular, svelte etc.
 Plugin URI: https://github.com/rowphant/WP-Headless
-Version: 0.0.1
+Version: 0.0.2
 Requires at least: 6.0
 License: MIT
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
