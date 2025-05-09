@@ -27,8 +27,7 @@ class HWP_Api_User_Image
     public function upload_user_image($request)
     {
         $upload_user_image_multiple = get_option('headless_wp_settings')['hwp_upload_user_image_multiple'];
-        $current_user_image = get_field('user_image', 'user_' . get_current_user_id());
-        $current_user_image_id = isset($current_user_image) ? $current_user_image['ID'] : null;
+        $current_user_image_id = get_user_meta(get_current_user_id(), 'profile_image', true);
 
         return $this->uploadFile(array(
             'extensions' => array('jpg', 'jpeg', 'png'),
@@ -42,6 +41,16 @@ class HWP_Api_User_Image
      * https://github.com/adeleyeayodeji/wordpress-image-upload-api
      * Upload image to wp rest api
      */
+
+    public function test($args)
+    {
+        return new WP_REST_Response([
+            'success' => false,
+            'data'    => [
+                'message' => __('You are not the owner of this image.'),
+            ],
+        ], 403);
+    }
 
     public function uploadFile($args)
     {
@@ -103,6 +112,15 @@ class HWP_Api_User_Image
             /**
              * Upload image
              **/
+            if (empty($_FILES['async-upload']['name'])) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'data'    => [
+                        'message' => __('No file was uploaded. Please try again.'),
+                    ],
+                ], 400);
+            }
+
             $attachment_id = media_handle_upload('async-upload', null, []);
 
             if (is_wp_error($attachment_id)) {
