@@ -199,7 +199,7 @@ class HWP_Options
     {
         $options = get_option('headless_wp_settings');
         foreach ($this->fields as $field) {
-            if (empty($options[$field['id']])) {
+            if (!isset($options[$field['id']])) {
                 $options[$field['id']] = $field['default'] ?? '';
             }
         }
@@ -292,7 +292,7 @@ class HWP_Options
                 $id = $field['id'];
 
                 $key = strpos($id, 'hwp_') === 0 ? substr($id, 4) : $id;
-                $value = isset($options[$id]) && $options[$id] !== '' ? $options[$id] : $field['default'];
+                $value = array_key_exists($id, $options) ? $options[$id] : $field['default'];
 
                 /**
                  * Use 'users_can_register' when hwp_api_user_registration is 'global'
