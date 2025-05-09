@@ -16,7 +16,11 @@ class HWP_User_Register
 {
     public function __construct()
     {
-        add_action('rest_api_init', array($this, 'register_endpoint'));
+        $user_registration = get_option('headless_wp_settings')['hwp_user_registration'];
+
+        if ($user_registration) {
+            add_action('rest_api_init', array($this, 'register_endpoint'));
+        }
     }
 
     public function register_endpoint()

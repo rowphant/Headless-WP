@@ -30,13 +30,21 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
 $myUpdateChecker->setBranch('master');
 
 // Einbinden der Klassen
-require_once plugin_dir_path(__FILE__) . 'includes/class-api-user-registration.php';
+require_once plugin_dir_path(__FILE__) . 'includes/admin/class-admin-fields.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-user-confirmation.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-reset-password.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-user-image.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-api-user-image.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-api-user-registration.php';
 
 // Initialisierung der Klassen
 function run_hwp() {
+    $hwp_options = new HWP_Options();
     $hwp_user_register = new HWP_User_Register();
     $hwp_user_confirmation = new HWP_User_Confirmation();
+    $hwp_reset_password = new HWP_Reset_Password();
+    $hwp_user_image = new HWP_User_Image();
+    $hwp_api_user_image = new HWP_Api_User_Image();
 }
 
 add_action('plugins_loaded', 'run_hwp');
