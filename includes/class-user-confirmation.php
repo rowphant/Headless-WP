@@ -277,7 +277,13 @@ class HWP_User_Confirmation
     {
         register_rest_field('user', 'account_activated', array(
             'get_callback'    => function ($user) {
-                return (bool)get_user_meta($user['id'], 'account_activated', true);
+                $state = get_user_meta($user['id'], 'account_activated', true);
+
+                if (current_user_can('administrator')) {
+                    $state = true;
+                }
+
+                return $state;
             },
             'update_callback' => function ($value, $user, $field_name) {
                 if ($value !== null) {
@@ -291,5 +297,3 @@ class HWP_User_Confirmation
         ));
     }
 }
-
-
