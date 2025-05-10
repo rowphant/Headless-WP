@@ -11,8 +11,8 @@ class HWP_User_Image
             add_action('edit_user_profile', array($this, 'show_user_meta_fields'));
             add_action('personal_options_update', array($this, 'save_user_meta_fields'));
             add_action('edit_user_profile_update', array($this, 'save_user_meta_fields'));
-    
-            add_filter('rest_prepare_user', array($this, 'add_account_image_to_api'), 10, 3);
+
+            add_action('rest_api_init', array($this, 'add_profile_image_field'));
         }
     }
 
@@ -88,9 +88,10 @@ class HWP_User_Image
         }
     }
 
-    public function add_account_image_to_api($response, $user, $request)
+    public function prepare_profile_picture_for_api($user)
     {
-        $image_id = get_user_meta($user->ID, 'profile_image', true);
+        $image_id = get_user_meta($user['id'], 'profile_image', true);
+
         if ($image_id) {
             $image_sizes = get_intermediate_image_sizes();
             $image_urls = array();
@@ -99,13 +100,54 @@ class HWP_User_Image
                 $image_urls[$size] = wp_get_attachment_image_url($image_id, $size);
             }
 
-            $response->data['profile_image'] = array(
-                'id' => $image_id,
+            return array(
+                'id' => is_numeric($image_id) ? (int) $image_id : $image_id,
                 'sizes' => $image_urls,
-
             );
+        } else {
+            return false;
+        }
+    }
+
+
+    public function update_profile_image($request)
+    {
+        $user_id = get_current_user_id();
+        $image_id = $request['profile_image'];
+
+        if (! current_user_can('edit_user', $user_id)) {
+            return new WP_Error('rest_cannot_edit', __('Sorry, you cannot edit this user.'), array('status' => 401));
         }
 
-        return $response;
+        if (isset($image_id)) {
+            update_user_meta($user_id, 'profile_image', $image_id);
+        }
+
+        return rest_ensure_response(['profile_image' => get_user_meta($user_id, 'profile_image', true)]);
+    }
+
+    public function add_profile_image_field()
+    {
+        register_rest_field(
+            'user',
+            'profile_image',
+            array(
+                'get_callback' => function ($user) {
+                    error_log('Getting profile image...');
+                    // return get_user_meta($user['id'], 'profile_image', true);
+                    return $this->prepare_profile_picture_for_api($user);
+                },
+                'update_callback' => function ($value, $user) {
+                    error_log('Updating profile image...');
+                    update_user_meta($user->ID, 'profile_image', $value);
+                    return $value;
+                },
+                'schema' => array(
+                    'description' => 'The ID of the user\'s profile image.',
+                    'type' => 'integer',
+                ),
+            )
+        );
+        error_log('Profile image field added.');
     }
 }
