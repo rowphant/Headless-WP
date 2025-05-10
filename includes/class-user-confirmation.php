@@ -72,8 +72,9 @@ class HWP_User_Confirmation
             $string = array('id' => $user_id, 'code' => $code);
 
             // create the url
-            $base_url = "http://localhost:3000";
-            $url = $base_url . '/confirm-user?code=' . base64_encode(serialize($string));
+            $confirmation_path = get_option('headless_wp_settings')['hwp_confirmation_path'] ?: 'confirm-user';
+            $base_url = get_option('headless_wp_settings')['hwp_app_host'] ?: 'http://localhost:3000';
+            $url = $base_url . '/' . $confirmation_path . '?code=' . base64_encode(serialize($string));
 
             // get user data
             $user_info = get_userdata($user_id);
@@ -120,6 +121,21 @@ class HWP_User_Confirmation
         $data = unserialize(base64_decode($activation_code));
         $id = $data['id'];
         $code = get_user_meta($id, 'activation_code', true);
+        $code_date = get_user_meta($id, 'activation_code_date', true);
+        $expiration_time = get_option('headless_wp_settings')['hwp_confirm_users_expiration'] ?: 60;
+
+        if ($code_date) {
+            $activation_time = new DateTime($code_date);
+            $current_time = new DateTime();
+            $interval = $current_time->diff($activation_time);
+            $minutes = $interval->i + ($interval->h * $expiration_time);
+
+            if ($minutes > 60) {
+                $response['code'] = 400;
+                $response['message'] = "The activation code has expired.";
+                return new WP_REST_Response($response, 400);
+            }
+        }
 
         if ($id && $code && ($code === $data['code'])) {
             // update the user meta
@@ -261,7 +277,7 @@ class HWP_User_Confirmation
     {
         register_rest_field('user', 'account_activated', array(
             'get_callback'    => function ($user) {
-                return (bool)get_user_meta($user['id'], 'account_activated', true) ?: true;
+                return (bool)get_user_meta($user['id'], 'account_activated', true);
             },
             'update_callback' => function ($value, $user, $field_name) {
                 if ($value !== null) {
@@ -275,3 +291,5 @@ class HWP_User_Confirmation
         ));
     }
 }
+
+
