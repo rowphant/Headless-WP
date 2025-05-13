@@ -151,7 +151,7 @@ class HWP_Api_User_Image
             }
 
             // return new WP_REST_Response($response, 200);
-            return new WP_REST_Response(['message' => 'Image uploaded successfully', 'id' => $attachment_id], 200);
+            return new WP_REST_Response($attachment, 200);
         }
     }
 }
