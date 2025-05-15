@@ -7,8 +7,9 @@ class HWP_User_Image
         $user_profile_image = get_option('headless_wp_settings')['hwp_user_profile_image'];
 
         if ($user_profile_image) {
-            add_action('show_user_profile', array($this, 'show_user_meta_fields'));
-            add_action('edit_user_profile', array($this, 'show_user_meta_fields'));
+            add_action('show_user_profile', array($this, 'show_user_meta_fields'), 2);
+            add_action('edit_user_profile', array($this, 'show_user_meta_fields'), 2);
+
             add_action('personal_options_update', array($this, 'save_user_meta_fields'));
             add_action('edit_user_profile_update', array($this, 'save_user_meta_fields'));
 
@@ -20,7 +21,7 @@ class HWP_User_Image
     {
 ?>
         <h3><?php _e('Profile Image', 'headless-wp'); ?></h3>
-        <table class="form-table">
+        <table class="form-table" role="presentation">
             <tr class="user-profile-image">
                 <th>
                     <label for="profile_image"><?php _e('Profile Image', 'headless-wp'); ?></label>
@@ -71,8 +72,14 @@ class HWP_User_Image
 
                     file_frame.open();
                 });
+
+                // ➡️ Custom Field über den "Update Profil" Button verschieben:
+                var profileImageRow = $('.user-profile-image').closest('tr');
+                var submitRow = $('tr.submit'); // Die Zeile mit dem Button
+                profileImageRow.insertBefore(submitRow);
             });
         </script>
+
 <?php
     }
 

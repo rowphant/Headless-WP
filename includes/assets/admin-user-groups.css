@@ -1,0 +1,30 @@
+.hwp-selected-users {
+  margin-top: 10px;
+  list-style: none;
+  padding: 0;
+}
+
+.hwp-selected-users li {
+  padding: 8px 12px;
+  background: #f1f1f1;
+  margin-bottom: 5px;
+  border: 1px solid #ddd;
+  cursor: move;
+  position: relative;
+}
+
+.hwp-selected-users li .remove {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  color: #c00;
+  cursor: pointer;
+}
+
+.hwp-saving-spinner {
+  display: inline-block;
+  margin-left: 10px;
+  color: #0073aa;
+  font-style: italic;
+  opacity: 0.7;
+}

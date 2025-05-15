@@ -14,12 +14,14 @@ class HWP_Options
                 'id' => 'hwp_app_host',
                 'label' => 'App Host',
                 'default' => 'http://localhost:3000',
+                'tab' => 'General',
             ),
-            array(
-                'type' => 'headline',
-                'id' => 'headline_user_registration',
-                'label' => 'User registration',
-            ),
+            // array(
+            //     'type' => 'headline',
+            //     'id' => 'headline_user_registration',
+            //     'label' => 'User registration',
+            //     'tab' => 'User',
+            // ),
             array(
                 'type' => 'select',
                 'id' => 'hwp_user_registration',
@@ -30,7 +32,8 @@ class HWP_Options
                     1 => 'Yes',
                     'global' => 'Global'
                 ),
-                'default' => 'global'
+                'default' => 'global',
+                'tab' => 'API',
             ),
             array(
                 'type' => 'select',
@@ -41,13 +44,15 @@ class HWP_Options
                     0 => 'No',
                     1 => 'Yes'
                 ),
-                'default' => 1
+                'default' => 1,
+                'tab' => 'API',
             ),
-            array(
-                'type' => 'headline',
-                'id' => 'headline_user_confirmation',
-                'label' => 'User confirmation',
-            ),
+            // array(
+            //     'type' => 'headline',
+            //     'id' => 'headline_user_confirmation',
+            //     'label' => 'User confirmation',
+            //     'tab' => 'Account activation',
+            // ),
             array(
                 'type' => 'select',
                 'id' => 'hwp_confirm_new_users',
@@ -57,7 +62,8 @@ class HWP_Options
                     0 => 'No',
                     1 => 'Yes'
                 ),
-                'default' => 1
+                'default' => 1,
+                'tab' => 'Account activation',
             ),
             array(
                 'type' => 'text',
@@ -67,6 +73,7 @@ class HWP_Options
                 'prefix' => '',
                 'suffix' => ' minutes',
                 'default' => 60,
+                'tab' => 'Account activation',
             ),
             array(
                 'type' => 'text',
@@ -75,12 +82,14 @@ class HWP_Options
                 'description' => 'The path is used in the confirmation link.',
                 'prefix' => empty(get_option('headless_wp_settings')['hwp_app_host']) ? 'http://localhost:3000/&nbsp;' : esc_url(get_option('headless_wp_settings')['hwp_app_host']) . '/',
                 'default' => 'confirm-user',
+                'tab' => 'Account activation',
             ),
-            array(
-                'type' => 'headline',
-                'id' => 'headline_user_profile_image',
-                'label' => 'User profile image',
-            ),
+            // array(
+            //     'type' => 'headline',
+            //     'id' => 'headline_user_profile_image',
+            //     'label' => 'User profile image',
+            //     'tab' => 'User',
+            // ),
             array(
                 'type' => 'select',
                 'id' => 'hwp_user_profile_image',
@@ -90,7 +99,8 @@ class HWP_Options
                     0 => 'No',
                     1 => 'Yes'
                 ),
-                'default' => 1
+                'default' => 1,
+                'tab' => 'General',
             ),
             array(
                 'type' => 'select',
@@ -101,7 +111,8 @@ class HWP_Options
                     0 => 'No',
                     1 => 'Yes'
                 ),
-                'default' => 1
+                'default' => 1,
+                'tab' => 'API',
             ),
             array(
                 'type' => 'select',
@@ -112,8 +123,45 @@ class HWP_Options
                     0 => 'No',
                     1 => 'Yes'
                 ),
-                'default' => 0
-            )
+                'default' => 0,
+                'tab' => 'API',
+            ),
+            array(
+                'type' => 'select',
+                'id' => 'hwp_user_groups',
+                'label' => 'Enable',
+                // 'description' => 'Allow users to upload multiple profile images to the media library. If not enabled, old media files will be deleted when a new image is uploaded.',
+                'options' => array(
+                    0 => 'No',
+                    1 => 'Yes'
+                ),
+                'default' => 0,
+                'tab' => 'User groups',
+            ),
+            array(
+                'type' => 'select',
+                'id' => 'hwp_user_groups_default_status',
+                'label' => 'Default status',
+                'description' => 'Status of a group after creation.',
+                'options' => array(
+                    'private' => 'Private',
+                    'public' => 'Public'
+                ),
+                'default' => 'private',
+                'tab' => 'User groups',
+            ),
+            array(
+                'type' => 'select',
+                'id' => 'hwp_user_groups_status_editable',
+                'label' => 'Editable',
+                'description' => 'Allow the group admin to edit the status of the group.',
+                'options' => array(
+                    0 => 'No',
+                    1 => 'Yes'
+                ),
+                'default' => 0,
+                'tab' => 'User groups',
+            ),
         );
 
         add_action('admin_menu', array($this, 'add_plugin_page'));
@@ -134,64 +182,143 @@ class HWP_Options
 
     public function create_admin_page()
     {
+        $tabs = array_unique(array_column($this->fields, 'tab'));
 ?>
         <div class="wrap">
             <h1>Headless WP Settings</h1>
+            <h2 class="nav-tab-wrapper">
+                <?php foreach ($tabs as $index => $tab) : ?>
+                    <a href="#tab-<?php echo $index; ?>" class="nav-tab"><?php echo esc_html($tab); ?></a>
+                <?php endforeach; ?>
+            </h2>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('headless_wp_settings_group');
-                do_settings_sections('headless-wp-settings');
+                foreach ($tabs as $index => $tab) {
+                    echo '<div id="tab-' . esc_attr($index) . '" class="hwp-tab-content">';
+                    do_settings_sections('headless-wp-settings-' . $index);
+                    echo '</div>';
+                }
                 submit_button();
                 ?>
             </form>
         </div>
+        <script>
+            jQuery(document).ready(function($) {
+                $('.hwp-tab-content').hide();
+                $('.hwp-tab-content').first().show();
+                $('.nav-tab').first().addClass('nav-tab-active');
+
+                $('.nav-tab').click(function(e) {
+                    e.preventDefault();
+                    $('.nav-tab').removeClass('nav-tab-active');
+                    $(this).addClass('nav-tab-active');
+
+                    $('.hwp-tab-content').hide();
+                    $($(this).attr('href')).show();
+                });
+            });
+        </script>
 <?php
     }
 
+
+    // public function page_init()
+    // {
+    //     register_setting(
+    //         'headless_wp_settings_group',
+    //         'headless_wp_settings',
+    //         array($this, 'validate')
+    //     );
+
+    //     add_settings_section(
+    //         'headless_wp_setting_section',
+    //         'Plugin Settings',
+    //         array($this, 'print_section_info'),
+    //         'headless-wp-settings'
+    //     );
+
+    //     foreach ($this->fields as $field) {
+    //         if ($field['type'] === 'headline') {
+    //             add_settings_field(
+    //                 $field['id'],
+    //                 sprintf('<h3 class="h3" style="margin-bottom: 0;">%s</h3>', esc_html($field['label'])),
+    //                 array($this, 'create_headline_callback'),
+    //                 'headless-wp-settings',
+    //                 'headless_wp_setting_section'
+    //             );
+    //         } else {
+    //             add_settings_field(
+    //                 $field['id'],
+    //                 sprintf('<div class="h3" style="margin-bottom: 0;">%s</div><p style="margin-top: 0; font-weight: normal; opacity: .6;">%s</p>', esc_html($field['label']), esc_html($field['description'])),
+    //                 array($this, 'create_field_callback'),
+    //                 'headless-wp-settings',
+    //                 'headless_wp_setting_section',
+    //                 array(
+    //                     'type' => $field['type'],
+    //                     'id' => $field['id'],
+    //                     'description' => $field['description'],
+    //                     'options' => $field['options'] ?? array(),
+    //                     'prefix' => $field['prefix'] ?? '',
+    //                     'suffix' => $field['suffix'] ?? '',
+    //                     'default' => $field['default'] ?? ''
+    //                 )
+    //             );
+    //         }
+    //     }
+    // }
+
     public function page_init()
     {
-        register_setting(
-            'headless_wp_settings_group',
-            'headless_wp_settings',
-            array($this, 'validate')
-        );
+        register_setting('headless_wp_settings_group', 'headless_wp_settings', array($this, 'validate'));
 
-        add_settings_section(
-            'headless_wp_setting_section',
-            'Plugin Settings',
-            array($this, 'print_section_info'),
-            'headless-wp-settings'
-        );
+        $tabs = array_unique(array_column($this->fields, 'tab'));
 
-        foreach ($this->fields as $field) {
-            if ($field['type'] === 'headline') {
-                add_settings_field(
-                    $field['id'],
-                    sprintf('<h3 class="h3" style="margin-bottom: 0;">%s</h3>', esc_html($field['label'])),
-                    array($this, 'create_headline_callback'),
-                    'headless-wp-settings',
-                    'headless_wp_setting_section'
-                );
-            } else {
-                add_settings_field(
-                    $field['id'],
-                    sprintf('<div class="h3" style="margin-bottom: 0;">%s</div><p style="margin-top: 0; font-weight: normal; opacity: .6;">%s</p>', esc_html($field['label']), esc_html($field['description'])),
-                    array($this, 'create_field_callback'),
-                    'headless-wp-settings',
-                    'headless_wp_setting_section',
-                    array(
-                        'type' => $field['type'],
-                        'id' => $field['id'],
-                        'description' => $field['description'],
-                        'options' => $field['options'] ?? array(),
-                        'prefix' => $field['prefix'] ?? '',
-                        'suffix' => $field['suffix'] ?? '',
-                        'default' => $field['default'] ?? ''
-                    )
-                );
+        foreach ($tabs as $index => $tab_name) {
+            $section_id = 'hwp_tab_section_' . $index;
+
+            add_settings_section(
+                $section_id,
+                '', // Keine Überschrift nötig
+                '__return_false', // Kein Output (Div Handling passiert im Admin Page)
+                'headless-wp-settings-' . $index // pro Tab eigene Page
+            );
+
+            foreach ($this->fields as $field) {
+                if ($field['tab'] !== $tab_name) continue;
+
+                if ($field['type'] === 'headline') {
+                    add_settings_field(
+                        $field['id'],
+                        sprintf('<h3 class="h3" style="margin-bottom: 0;">%s</h3>', esc_html($field['label'])),
+                        array($this, 'create_headline_callback'),
+                        'headless-wp-settings-' . $index,
+                        $section_id,
+                        $field
+                    );
+                } else {
+                    add_settings_field(
+                        $field['id'],
+                        sprintf('<div class="h3" style="margin-bottom: 0;">%s</div><p style="margin-top: 0; font-weight: normal; opacity: .6;">%s</p>', esc_html($field['label']), esc_html($field['description'] ?? '')),
+                        array($this, 'create_field_callback'),
+                        'headless-wp-settings-' . $index,
+                        $section_id,
+                        array(
+                            'type' => $field['type'],
+                            'id' => $field['id'],
+                            'description' => $field['description'] ?? '',
+                            'options' => $field['options'] ?? array(),
+                            'prefix' => $field['prefix'] ?? '',
+                            'suffix' => $field['suffix'] ?? '',
+                            'default' => $field['default'] ?? ''
+                        )
+                    );
+                }
             }
         }
     }
+
+
 
     public function print_section_info() {}
 
