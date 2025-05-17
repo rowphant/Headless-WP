@@ -412,11 +412,16 @@ class HWP_User_Groups
             foreach ($user_groups as $group) {
                 $group_users = get_post_meta($group->ID, $meta_key, true);
                 $group_users = is_array($group_users) ? $group_users : array();
+                $members = count(get_post_meta($group->ID, 'group_members', true));
 
                 if (in_array($user_id, $group_users)) {
                     $groups_for_user[] = array(
                         'id'    => $group->ID,
                         'title' => $group->post_title,
+                        'public' => get_post_status($group->ID) === 'publish',
+                        'description' => get_post_meta($group->ID, 'group_description', true),
+                        'members' => $members,
+                        // 'admins' => get_post_meta($group->ID, 'group_admins', true),
                     );
                 }
             }
