@@ -1,6 +1,6 @@
 # Headless WP
 
-This WordPress plugin is created to simplify and secure the integration of Single Page Applications (SPAs) with WordPress as a backend. It extends WordPress with useful REST API endpoints and configurable options to manage user authentication, registration, and user groups—ideal for headless WordPress setups.
+This WordPress plugin is created to simplify and secure the integration of Single Page Applications (SPAs) with WordPress as a backend. It extends WordPress with useful REST API endpoints and configurable options to manage user authentication, registration, and user groups - ideal for headless WordPress setups.
 
 ## Features
 
