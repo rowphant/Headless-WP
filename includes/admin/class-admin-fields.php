@@ -84,6 +84,14 @@ class HWP_Options
                 'default' => 'confirm-user',
                 'tab' => 'Account activation',
             ),
+            array(
+                'type' => 'custom_send_email',
+                'id' => 'hwp_send_test_email',
+                'label' => 'Send confirmation email',
+                'description' => 'Send a test confirmation email to this address.',
+                'default' => get_option('admin_email'),
+                'tab' => 'Account activation',
+            ),
             // array(
             //     'type' => 'headline',
             //     'id' => 'headline_user_profile_image',
@@ -167,6 +175,12 @@ class HWP_Options
         add_action('admin_menu', array($this, 'add_plugin_page'));
         add_action('admin_init', array($this, 'page_init'));
         add_action('rest_api_init', array($this, 'add_api_endpoint'));
+
+        add_action('admin_enqueue_scripts', function () {
+            wp_localize_script('jquery', 'wpApiSettings', array(
+                'nonce' => wp_create_nonce('wp_rest')
+            ));
+        });
     }
 
     public function add_plugin_page()
@@ -217,56 +231,25 @@ class HWP_Options
                     $('.hwp-tab-content').hide();
                     $($(this).attr('href')).show();
                 });
+
+                // Test Mail Button
+                $('#hwp_resend_confirmation_button').on('click', function() {
+                    if (!confirm('Send confirmation email to test user?')) return;
+
+                    $.post(ajaxurl, {
+                        action: 'hwp_send_confirmation'
+                    }, function(response) {
+                        if (response.success) {
+                            alert('Confirmation email sent successfully.');
+                        } else {
+                            alert('Error: ' + response.data);
+                        }
+                    });
+                });
             });
         </script>
 <?php
     }
-
-
-    // public function page_init()
-    // {
-    //     register_setting(
-    //         'headless_wp_settings_group',
-    //         'headless_wp_settings',
-    //         array($this, 'validate')
-    //     );
-
-    //     add_settings_section(
-    //         'headless_wp_setting_section',
-    //         'Plugin Settings',
-    //         array($this, 'print_section_info'),
-    //         'headless-wp-settings'
-    //     );
-
-    //     foreach ($this->fields as $field) {
-    //         if ($field['type'] === 'headline') {
-    //             add_settings_field(
-    //                 $field['id'],
-    //                 sprintf('<h3 class="h3" style="margin-bottom: 0;">%s</h3>', esc_html($field['label'])),
-    //                 array($this, 'create_headline_callback'),
-    //                 'headless-wp-settings',
-    //                 'headless_wp_setting_section'
-    //             );
-    //         } else {
-    //             add_settings_field(
-    //                 $field['id'],
-    //                 sprintf('<div class="h3" style="margin-bottom: 0;">%s</div><p style="margin-top: 0; font-weight: normal; opacity: .6;">%s</p>', esc_html($field['label']), esc_html($field['description'])),
-    //                 array($this, 'create_field_callback'),
-    //                 'headless-wp-settings',
-    //                 'headless_wp_setting_section',
-    //                 array(
-    //                     'type' => $field['type'],
-    //                     'id' => $field['id'],
-    //                     'description' => $field['description'],
-    //                     'options' => $field['options'] ?? array(),
-    //                     'prefix' => $field['prefix'] ?? '',
-    //                     'suffix' => $field['suffix'] ?? '',
-    //                     'default' => $field['default'] ?? ''
-    //                 )
-    //             );
-    //         }
-    //     }
-    // }
 
     public function page_init()
     {
@@ -381,6 +364,46 @@ class HWP_Options
                 }
                 echo '</select>';
                 break;
+            case 'custom_send_email':
+                $input_id = esc_attr($args['id']) . '_input';
+                $button_id = esc_attr($args['id']) . '_button';
+                $default_email = esc_attr($value);
+
+                echo '<input type="email" id="' . $input_id . '" value="' . $default_email . '" style="min-width: 300px; margin-right: 10px;" />';
+                echo '<button type="button" id="' . $button_id . '" class="button button-primary">Send confirmation email</button>';
+                echo '<p class="description">' . esc_html($args['description']) . '</p>';
+
+                // JS Output
+                echo "<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const button = document.getElementById('$button_id');
+            const input = document.getElementById('$input_id');
+            button.addEventListener('click', function () {
+                const email = input.value;
+                if (!email) {
+                    alert('Please enter a valid email address.');
+                    return;
+                }
+                fetch('" . esc_url_raw(rest_url('headless-wp/v1/send-test-confirmation')) . "', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': wpApiSettings.nonce
+                    },
+                    body: JSON.stringify({ email: email })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || 'Email sent successfully.');
+                })
+                .catch(error => {
+                    alert('Error sending email');
+                    console.error(error);
+                });
+            });
+        });
+    </script>";
+                break;
         }
     }
 
@@ -407,6 +430,14 @@ class HWP_Options
             'methods' => 'GET',
             'callback' => [$this, 'get_fields'],
             'permission_callback' => '__return_true'
+        ));
+
+        register_rest_route('headless-wp/v1', '/send-test-confirmation', array(
+            'methods' => 'POST',
+            'callback' => [$this, 'handle_test_email_send'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            }
         ));
     }
 
@@ -438,5 +469,22 @@ class HWP_Options
         }, []);
 
         return new WP_REST_Response($fields_data, 200);
+    }
+
+    public function handle_test_email_send($request)
+    {
+        $email = sanitize_email($request->get_param('email'));
+        if (!isset($email) && !empty($email)) {
+            return new WP_REST_Response(['message' => 'Invalid email address'], 400);
+        }
+
+        // Die Funktion aus dem User Confirmation Modul verwenden
+        if (class_exists('HWP_User_Confirmation')) {
+            $confirmation = new HWP_User_Confirmation();
+            $confirmation->wphg_sendConfirmationEmail(['to' => $email]); // Optional: Methode anpassen, falls notwendig
+            return new WP_REST_Response(['message' => 'Confirmation email sent to ' . $email], 200);
+        }
+
+        return new WP_REST_Response(['message' => 'Confirmation system not available.'], 500);
     }
 }

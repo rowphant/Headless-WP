@@ -43,18 +43,6 @@ class HWP_User_Confirmation
         if (!$user_data) {
             $response['code'] = 400;
             $response['message'] = 'User not found';
-
-            // $error->add(400, __("User not found", 'wp-rest-user'), array('status' => 400));
-            // return $error;
-
-            // return new WP_Error('no_user', 'Kein Benutzer mit dieser E-Mail gefunden.', ['status' => 404]);
-
-            // return new WP_REST_Response([
-            //     'success' => false,
-            //     'data'    => [
-            //         'message' => __('User not found', 'wp-rest-user'),
-            //     ],
-            // ], 403);
         } else {
             // create md5 code to verify later
             $code = $this->generateRandomString(32);
@@ -95,6 +83,24 @@ class HWP_User_Confirmation
         return $response;
     }
 
+    public function wphg_sendConfirmationEmail($args = array(
+        'to' => null,
+        'subject' => null,
+        'body' => null,
+    ))
+    {
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $to = (isset($args['to']) && $args['to']) ? $args['to'] : get_option('admin_email');
+        $subject = (isset($args['subject']) && $args['subject']) ? $args['subject'] : 'Confirm your email address at robertmetzner.com';
+        $body = $args['body'];
+        
+        if (empty($body)) {
+            $body = '<h1>Test E-Mail Body</h1>';
+        }
+
+        wp_mail($to, $subject, $body, $headers);
+    }
+
     /**
      * Verify user by given activation code
      */
@@ -124,6 +130,7 @@ class HWP_User_Confirmation
         $code_date = get_user_meta($id, 'activation_code_date', true);
         $expiration_time = get_option('headless_wp_settings')['hwp_confirm_users_expiration'] ?: 60;
 
+        // Check if code is expired
         if ($code_date) {
             $activation_time = new DateTime($code_date);
             $current_time = new DateTime();
