@@ -29,6 +29,10 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
 //Set the branch that contains the stable release.
 $myUpdateChecker->setBranch('master');
 
+// Define the API base path for reuse in other PHP files of this plugin.
+define('WPG_API_BASE_PATH', 'headless-wp/v1');
+
+
 // Einbinden der Klassen
 require_once plugin_dir_path(__FILE__) . 'includes/admin/class-admin-fields.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-user-confirmation.php';
