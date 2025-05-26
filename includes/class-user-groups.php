@@ -286,7 +286,7 @@ class HWP_User_Groups
             echo '</select></div></td>';
             echo '</tr>';
         }
-        
+
         echo '</tbody>';
         echo '</table>';
         echo '<input type="hidden" id="hwp_user_id" value="' . esc_attr($user->ID) . '"></div>';
@@ -430,5 +430,28 @@ class HWP_User_Groups
         }
 
         return $result;
+    }
+
+
+    public function add_user_groups_rest_api()
+    {
+        register_rest_endpoint('headless-wp/v1', 'user-group', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array($this, 'add_user_groups_for_rest'),
+            'permission_callback' => function () {
+                return current_user_can('edit_users');
+            },
+        ));
+    }
+
+    public function add_user_groups_for_rest(WP_REST_Request $request)
+    {
+        $params = $request->get_json_params();
+        $user_id = $params['user_id'];
+        $group_ids = $params['group_ids'];
+
+        if (!is_array($group_ids)) {
+            return new WP_Error('invalid_group_ids', __('Group IDs must be an array'), array('status' => 400));
+        }
     }
 }
