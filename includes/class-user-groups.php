@@ -25,6 +25,9 @@ class HWP_User_Groups
 
             // Add REST API fields for user
             add_action('rest_api_init', array($this, 'register_user_groups_rest_fields'));
+
+            // API Endpoints for user groups
+            add_action('rest_api_init', array($this, 'add_user_groups_rest_api'));
         }
     }
 
@@ -59,7 +62,7 @@ class HWP_User_Groups
             'menu_icon'          => 'dashicons-groups',
         );
 
-        register_post_type('user_group', $args);
+        register_post_type('user-group', $args);
     }
 
     public function enqueue_admin_assets($hook)
@@ -94,7 +97,7 @@ class HWP_User_Groups
             'user_groups_custom_fields',
             'User Group Details',
             array($this, 'user_groups_render_custom_fields_meta_box'),
-            'user_group',
+            'user-group',
             'normal',
             'default'
         );
@@ -261,7 +264,7 @@ class HWP_User_Groups
         $user_id = $user->ID;
 
         $user_groups = get_posts(array(
-            'post_type'   => 'user_group',
+            'post_type'   => 'user-group',
             'numberposts' => -1,
             'post_status' => 'publish'
         ));
@@ -301,7 +304,7 @@ class HWP_User_Groups
         $user_id = intval($user_id);
 
         $user_groups = get_posts(array(
-            'post_type'   => 'user_group',
+            'post_type'   => 'user-group',
             'numberposts' => -1,
             'post_status' => 'publish'
         ));
@@ -363,7 +366,7 @@ class HWP_User_Groups
         // }
 
         $user_groups = get_posts(array(
-            'post_type'   => 'user_group',
+            'post_type'   => 'user-group',
             'numberposts' => -1,
             'post_status' => 'publish'
         ));
@@ -397,7 +400,7 @@ class HWP_User_Groups
         $user_id = $user['id'];
 
         $user_groups = get_posts(array(
-            'post_type'   => 'user_group',
+            'post_type'   => 'user-group',
             'numberposts' => -1,
             'post_status' => 'publish'
         ));
@@ -412,7 +415,7 @@ class HWP_User_Groups
             foreach ($user_groups as $group) {
                 $group_users = get_post_meta($group->ID, $meta_key, true);
                 $group_users = is_array($group_users) ? $group_users : array();
-                $members = count(get_post_meta($group->ID, 'group_members', true));
+                $members = count(get_post_meta($group->ID, 'group_members'));
 
                 if (in_array($user_id, $group_users)) {
                     $groups_for_user[] = array(
@@ -435,23 +438,34 @@ class HWP_User_Groups
 
     public function add_user_groups_rest_api()
     {
-        register_rest_endpoint('headless-wp/v1', 'user-group', array(
-            'methods'             => WP_REST_Server::CREATABLE,
-            'callback'            => array($this, 'add_user_groups_for_rest'),
-            'permission_callback' => function () {
-                return current_user_can('edit_users');
-            },
+        register_rest_route('headless-wp/v1', 'user-groups', array(
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array($this, 'create_user_group'),
+                'permission_callback' => function () {
+                    return current_user_can('edit_users');
+                },
+                'args'                => array(
+                    'title' => array(
+                        'required'    => true,
+                        'type'        => 'string',
+                    ),
+                ),
+            )
         ));
     }
 
-    public function add_user_groups_for_rest(WP_REST_Request $request)
+    public function create_user_group($request)
     {
-        $params = $request->get_json_params();
-        $user_id = $params['user_id'];
-        $group_ids = $params['group_ids'];
-
-        if (!is_array($group_ids)) {
-            return new WP_Error('invalid_group_ids', __('Group IDs must be an array'), array('status' => 400));
-        }
+        $title = $request['title'];
+        $post = array(
+            'post_title'    => wp_strip_all_tags($title),
+            'post_content'  => '',
+            'post_status'   => 'publish',
+            'post_author'   => get_current_user_id(),
+            'post_type'     => 'user-group',
+        );
+        $post_id = wp_insert_post($post);
+        return $post_id;
     }
 }
