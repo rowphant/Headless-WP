@@ -93,7 +93,7 @@ class HWP_User_Confirmation
         $to = (isset($args['to']) && $args['to']) ? $args['to'] : get_option('admin_email');
         $subject = (isset($args['subject']) && $args['subject']) ? $args['subject'] : 'Confirm your email address at robertmetzner.com';
         $body = $args['body'];
-        
+
         if (empty($body)) {
             $body = '<h1>Test E-Mail Body</h1>';
         }
@@ -255,7 +255,9 @@ class HWP_User_Confirmation
             return false;
         }
 
-        update_user_meta($user_id, 'account_activated', $_POST['account_activated']);
+        if (isset($_POST['account_activated'])) {
+            update_user_meta($user_id, 'account_activated', $_POST['account_activated']);
+        }
     }
 
     public function modify_user_list_table($columns)

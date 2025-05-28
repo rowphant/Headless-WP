@@ -1,136 +1,88 @@
-jQuery(document).ready(function ($) {
-  $(".hwp-user-select").each(function () {
-    var $select = $(this);
-    var fieldId = $select.data("field-id");
-    var $sortable = $('.hwp-selected-users[data-field-id="' + fieldId + '"]');
-
-    $select.select2({
-      ajax: {
-        url: HWP_User_Groups.ajax_url,
-        dataType: "json",
-        delay: 250,
-        data: function (params) {
-          return {
-            q: params.term,
-            action: "hwp_user_search",
-            nonce: HWP_User_Groups.nonce,
-          };
-        },
-        processResults: function (data) {
-          return { results: data };
-        },
-        cache: true,
-      },
-      placeholder: "Select users",
-      minimumInputLength: 2,
-      allowClear: false,
+jQuery(document).ready(function($) {
+    // Select2 for User Multiselect in Group Post Type
+    $('.hwp-user-select').each(function() {
+        var $this = $(this);
+        $this.select2({
+            ajax: {
+                url: HWP_User_Groups.ajax_url, // Uses HWP_User_Groups for user search
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term, // search term
+                        action: 'hwp_user_search',
+                        nonce: HWP_User_Groups.nonce
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                cache: true
+            },
+            placeholder: 'Search for a user',
+            minimumInputLength: 2,
+            allowClear: true
+        });
     });
 
-    $select.on("select2:select", function (e) {
-      var user = e.params.data;
-      if ($sortable.find('[data-user-id="' + user.id + '"]').length === 0) {
-        $sortable.append(
-          '<li data-user-id="' +
-            user.id +
-            '">' +
-            user.text +
-            ' <span class="remove">×</span></li>'
-        );
-      }
+    // Select2 for Group Multiselect in User Profile
+    $('.hwp-user-group-select').each(function() {
+        var $this = $(this);
+        var fieldName = $this.data('field-name'); // Get the field name from data attribute
+
+        $this.select2({
+            ajax: {
+                url: hwp_user_groups_profile_ajax.ajax_url, // Uses the new localized variable for profile AJAX
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term, // search term
+                        action: 'hwp_group_search', // New AJAX action for group search
+                        nonce: hwp_user_groups_profile_ajax.nonce // Use the new nonce
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                cache: true
+            },
+            placeholder: 'Search for a group',
+            minimumInputLength: 2,
+            allowClear: true
+        });
     });
 
-    $sortable.sortable();
+    // Optional: If you want to use the hwp_update_user_groups_ajax action via JS
+    // This is not strictly needed if hwp_user_groups_profile_save handles all updates
+    // but if you have a specific scenario where you want to trigger an update via AJAX
+    // for a single field, here's how you might set it up.
+    // $('.hwp-user-group-select').on('change', function() {
+    //     var $this = $(this);
+    //     var userId = $('#hwp_user_id').val(); // Assuming you have a hidden input with the user ID
+    //     var metaKey = $this.attr('name').replace('[]', ''); // Get the name attribute without []
+    //     var selectedGroupIds = $this.val(); // Get selected values
 
-    $sortable.on("click", ".remove", function () {
-      var userId = $(this).parent().data("user-id");
-      $sortable.find('[data-user-id="' + userId + '"]').remove();
-      $select
-        .find('option[value="' + userId + '"]')
-        .remove()
-        .trigger("change");
-    });
-  });
-
-  // Before Save: Sync list order back to select
-  $("form#post").on("submit", function () {
-    $(".hwp-selected-users").each(function () {
-      var $sortable = $(this);
-      var fieldId = $sortable.data("field-id");
-      var $select = $('select[data-field-id="' + fieldId + '"]');
-
-      var selectedIds = [];
-      $sortable.children("li").each(function () {
-        selectedIds.push($(this).data("user-id"));
-      });
-
-      $select.val(selectedIds);
-    });
-  });
-});
-
-jQuery(document).ready(function ($) {
-  $(".hwp-user-group-select")
-    .select2({
-      placeholder: "Select Groups",
-      allowClear: true,
-    })
-    .on("change", function () {
-      const $select = $(this);
-      const meta_key = $select.attr("name").replace("[]", "");
-      const user_id = $("#hwp_user_id").val();
-
-      const group_ids = $select.val() ? $select.val() : [];
-
-      $select
-        .parent()
-        .append('<span class="hwp-saving-spinner">Saving...</span>');
-
-      $.ajax({
-        url: hwp_user_groups_ajax.ajax_url,
-        method: "POST",
-        data: {
-          action: "hwp_update_user_groups",
-          nonce: hwp_user_groups_ajax.nonce,
-          user_id: user_id,
-          meta_key: meta_key,
-          group_ids: group_ids,
-        },
-        success: function (response) {
-          console.log(hwp_user_groups_ajax);
-          if (response.success) {
-            console.log("Saved:", meta_key, response.data);
-
-            $select
-              .parent()
-              .append(
-                '<span class="hwp-save-success" style="color:green;margin-left:10px;">✓ Saved</span>'
-              );
-            setTimeout(() => {
-              $select
-                .parent()
-                .find(".hwp-save-success")
-                .fadeOut(500, function () {
-                  $(this).remove();
-                });
-            }, 1500);
-          } else {
-            console.error(
-              "Error: " +
-                (response.data || response.message || "Unexpected error")
-            );
-          }
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-          console.error("AJAX Error: " + textStatus + " - " + errorThrown);
-        },
-        complete: function () {
-          $select
-            .parent()
-            .find(".hwp-saving-spinner")
-            .fadeOut(300, function () {
-              $(this).remove();
-            });
-        },
-      });
-    });
+    //     $.ajax({
+    //         url: hwp_user_groups_profile_ajax.ajax_url,
+    //         type: 'POST',
+    //         data: {
+    //             action: 'hwp_update_user_groups',
+    //             nonce: hwp_user_groups_profile_ajax.nonce,
+    //             user_id: userId,
+    //             meta_key: metaKey,
+    //             group_ids: selectedGroupIds
+    //         },
+    //         success: function(response) {
+    //             console.log('Update successful:', response);
+    //         },
+    //         error: function(xhr, status, error) {
+    //             console.error('Update failed:', error);
+    //         }
+    //     });
+    // });
 });
