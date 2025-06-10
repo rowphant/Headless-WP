@@ -38,7 +38,7 @@ class HWP_User_Register
 
         $username = sanitize_user($request['username']);
         $email    = sanitize_email($request['email']);
-        $password = $request['password'];
+        $password = isset($request['password']) ? $request['password'] : wp_generate_password(12, false);
         // $role = sanitize_text_field($parameters['role']);
 
         if (empty($username)) {
@@ -72,9 +72,6 @@ class HWP_User_Register
         if (!$user_id && email_exists($email) == false) {
 
             // Create new user in Wordpress
-            // $user_id = wp_create_user($username, $password, $email);
-            // Randomly generated password
-            $password = wp_generate_password();
             $user_id = wp_create_user($username, $password, $email);
 
             if (!is_wp_error($user_id)) {

@@ -109,8 +109,8 @@ class HWP_User_Groups
             wp_enqueue_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', array('jquery'), null, true);
             wp_enqueue_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css');
 
-            wp_enqueue_script('hwp_user_groups_admin', plugins_url('assets/admin-user-groups.js', __FILE__), array('jquery', 'select2', 'jquery-ui-sortable'), null, true);
-            wp_enqueue_style('hwp_user_groups_admin_css', plugins_url('assets/admin-user-groups.css', __FILE__));
+            wp_enqueue_script('hwp_user_groups_admin', plugins_url('includes/assets/admin-user-groups.js', __FILE__), array('jquery', 'select2', 'jquery-ui-sortable'), null, true);
+            wp_enqueue_style('hwp_user_groups_admin_css', plugins_url('includes/assets/admin-user-groups.css', __FILE__));
 
             // Localize scripts with AJAX URLs and nonces
             wp_localize_script('hwp_user_groups_admin', 'HWP_User_Groups', array(

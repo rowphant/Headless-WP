@@ -126,23 +126,39 @@ class HWP_User_Confirmation
 
         $data = unserialize(base64_decode($activation_code));
         $id = $data['id'];
-        $code = get_user_meta($id, 'activation_code', true);
         $code_date = get_user_meta($id, 'activation_code_date', true);
         $expiration_time = get_option('headless_wp_settings')['hwp_confirm_users_expiration'] ?: 60;
 
         // Check if code is expired
+
         if ($code_date) {
-            $activation_time = new DateTime($code_date);
+            // Überprüfen, ob $code_date bereits ein DateTime-Objekt ist
+            if ($code_date instanceof DateTime) {
+                $activation_time = $code_date; // Verwende das vorhandene Objekt direkt
+            } else {
+                // Andernfalls versuche, ein DateTime-Objekt aus dem String zu erstellen
+                try {
+                    $activation_time = new DateTime($code_date);
+                } catch (Exception $e) {
+                    // Falls $code_date kein gültiger String ist, behandle den Fehler
+                    $response['code'] = 400;
+                    $response['message'] = "Invalid activation code date format.";
+                    return new WP_REST_Response($response, 400);
+                }
+            }
+
             $current_time = new DateTime();
             $interval = $current_time->diff($activation_time);
-            $minutes = $interval->i + ($interval->h * $expiration_time);
+            $minutes = $interval->i + ($interval->h * 60); // Korrektur: $interval->h sollte mit 60 multipliziert werden
 
-            if ($minutes > 60) {
+            if ($minutes > $expiration_time) { // Vergleich mit $expiration_time
                 $response['code'] = 400;
                 $response['message'] = "The activation code has expired.";
                 return new WP_REST_Response($response, 400);
             }
         }
+
+        $code = get_user_meta($id, 'activation_code', true);
 
         if ($id && $code && ($code === $data['code'])) {
             // update the user meta
@@ -155,7 +171,7 @@ class HWP_User_Confirmation
             $response['code'] = 200;
             $response['message'] = 'Your account has been activated!';
         } else {
-            $response['code'] = 200;
+            $response['code'] = 401;
             $response['message'] = "The given activation code is either wrong or not valid anymore.";
         }
 
@@ -167,7 +183,7 @@ class HWP_User_Confirmation
      */
     public function headless_wp_endpoint_send_verification_email()
     {
-        $users_can_register = get_option('users_can_register');
+        $users_can_register = get_option('headless_wp_settings')['hwp_user_registration'];
 
         if ($users_can_register) {
             register_rest_route('wp/v2', 'send-verification-email', array(
@@ -286,10 +302,10 @@ class HWP_User_Confirmation
     {
         register_rest_field('user', 'account_activated', array(
             'get_callback'    => function ($user) {
-                $state = get_user_meta($user['id'], 'account_activated', true);
+                $state = (int) get_user_meta($user['id'], 'account_activated', true);
 
                 if (current_user_can('administrator')) {
-                    $state = true;
+                    $state = 1;
                 }
 
                 return $state;
