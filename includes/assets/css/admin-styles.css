@@ -1,0 +1,15 @@
+.hwp-user-groups-field-wrapper {
+  border: 2px solid;
+  /* border-radius: 6px; */
+  border-color: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  margin: 10px 0;
+
+  @media (prefers-color-scheme: dark) {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+.hwp-user-groups-field-title {
+  margin: 0;
+}

@@ -113,6 +113,7 @@ class HWP_User_Groups_Requests extends HWP_User_Groups_Base
 
         // Check if the user is already a member
         if ($this->is_user_member_of_group($current_user_id, $group_id)) {
+            $this->add_user_to_group($current_user_id, $group_id);
             return new WP_REST_Response(array('success' => false, 'message' => 'You are already a member of this group.'), 409);
         }
 
@@ -259,38 +260,5 @@ class HWP_User_Groups_Requests extends HWP_User_Groups_Base
         $this->remove_request_from_user_meta($user_id_to_delete, $group_id);
 
         return new WP_REST_Response(array('success' => true, 'message' => sprintf('Join request for %s to group "%s" successfully cancelled.', $requested_user->display_name, $group_post->post_title)), 200);
-    }
-
-    /**
-     * Removes a user ID from a group's 'requests' meta field.
-     *
-     * @param int $group_id The ID of the group.
-     * @param int $user_id_to_remove The ID of the user to remove from requests.
-     */
-    private function remove_request_from_group_meta($group_id, $user_id_to_remove)
-    {
-        $group_requests = get_post_meta($group_id, 'requests', true);
-        if (is_array($group_requests) && in_array((int)$user_id_to_remove, $group_requests, true)) {
-            $group_requests = array_values(array_diff($group_requests, [(int)$user_id_to_remove]));
-            update_post_meta($group_id, 'requests', $group_requests);
-        }
-    }
-
-    /**
-     * Removes a group ID from a user's 'group_requests' meta field.
-     *
-     * @param int $user_id The ID of the user.
-     * @param int $group_id_to_remove The ID of the group to remove from user's requests.
-     */
-    private function remove_request_from_user_meta($user_id, $group_id_to_remove)
-    {
-        $user_requests_meta = get_user_meta($user_id, 'group_requests', true);
-        if (!is_array($user_requests_meta)) {
-            $user_requests_meta = [];
-        }
-        if (in_array((int)$group_id_to_remove, $user_requests_meta, true)) {
-            $user_requests_meta = array_values(array_diff($user_requests_meta, [(int)$group_id_to_remove]));
-            update_user_meta($user_id, 'group_requests', $user_requests_meta);
-        }
     }
 }

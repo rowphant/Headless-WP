@@ -141,6 +141,8 @@ class HWP_User_Groups_Members extends HWP_User_Groups_Base
              return new WP_REST_Response(array('success' => false, 'message' => 'You do not have permission to remove this member.'), 403);
         }
 
+        $this->remove_user_from_group($user_id_to_remove, $group_id);
+        
         // Use the helper from the base class
         if (!$this->is_user_member_of_group($user_id_to_remove, $group_id)) {
             return new WP_REST_Response(array('success' => true, 'message' => sprintf('%s is not a member of "%s".', $user_to_remove->display_name, $group_post->post_title)), 200);
@@ -160,8 +162,6 @@ class HWP_User_Groups_Members extends HWP_User_Groups_Base
     // or copy them here if they are only for specific classes.
     // I'm including placeholder stubs, you should ensure they are correctly implemented
     // and accessible (e.g., from HWP_User_Groups_Base).
-    protected function remove_invitation_from_group_meta($group_id, $email_to_remove) { /* ... */ } // Assuming this is in HWP_User_Groups_Invitations, consider moving to base if generic
-    protected function remove_invitation_from_user_meta($user_id, $group_id_to_remove) { /* ... */ } // Assuming this is in HWP_User_Groups_Invitations
     protected function remove_request_from_group_meta($group_id, $user_id_to_remove) { /* ... */ } // Assuming this is in HWP_User_Groups_Requests
     protected function remove_request_from_user_meta($user_id, $group_id_to_remove) { /* ... */ } // Assuming this is in HWP_User_Groups_Requests
 }

@@ -241,12 +241,9 @@ class HWP_User_Groups_Invitations extends HWP_User_Groups_Base
         if (!is_array($group_meta_invitations)) {
             $group_meta_invitations = [];
         }
-        error_log("DEBUG: Handle Action: group_id {$group_id} invitations FROM DB: " . print_r($group_meta_invitations, true)); // Hinzugefügt
-        error_log("DEBUG: Handle Action: Looking for email: " . $invited_email_for_meta); // Hinzugefügt
 
         // Prüfung, ob die E-Mail in den Einladungen der Gruppe existiert (jetzt nach dem "already member" Check)
         if (!in_array($invited_email_for_meta, $group_meta_invitations, true)) {
-            error_log("DEBUG: Invitation NOT found in group meta. Returning 409.");
             return new WP_REST_Response(array('success' => false, 'message' => sprintf('Invitation for %s doesn\'t exist or has already been processed for group "%s".', $invited_email_for_meta, $group_post->post_title)), 409);
         }
 
@@ -262,10 +259,10 @@ class HWP_User_Groups_Invitations extends HWP_User_Groups_Base
                 error_log("DEBUG: Before is_user_member_of_group check. User ID: {$user_id_for_group_actions}, Group ID: {$group_id}");
                 // Prio 1: Prüfen, ob User bereits Mitglied ist!
                 if ($this->is_user_member_of_group($user_id_for_group_actions, $group_id)) {
-                    error_log("DEBUG: is_user_member_of_group returned TRUE. User is already a member.");
                     // Der User ist bereits Mitglied. Einladung bereinigen.
                     $this->remove_invitation_from_group_meta($group_id, $invited_email_for_meta);
                     $this->remove_invitation_from_user_meta($user_id_for_group_actions, $group_id); // Annahme: 'group_invitations' im User-Meta speichert Group IDs
+
                     return new WP_REST_Response(array('success' => true, 'message' => sprintf('%s is already a member of "%s". Invitation cleaned up.', $target_user->display_name, $group_post->post_title)), 200);
                 } else {
                     error_log("DEBUG: is_user_member_of_group returned FALSE. User is NOT yet a member.");
@@ -306,29 +303,6 @@ class HWP_User_Groups_Invitations extends HWP_User_Groups_Base
             'email'       => $user_email_for_response,
             'action'      => $action,
         ));
-    }
-
-    private function remove_invitation_from_group_meta($group_id, $identifier_to_remove)
-    {
-        $group_meta_invitations = get_post_meta($group_id, 'invitations', true);
-        if (is_array($group_meta_invitations) && in_array($identifier_to_remove, $group_meta_invitations, true)) {
-            $group_meta_invitations = array_values(array_diff($group_meta_invitations, [$identifier_to_remove]));
-            update_post_meta($group_id, 'invitations', $group_meta_invitations);
-        }
-    }
-
-    // Wenn 'group_invitations' im User-Metafeld Group IDs speichert, dann ist das OK.
-    // Wenn es E-Mails speichern sollte, müsste dieser Teil anders aussehen.
-    private function remove_invitation_from_user_meta($user_id, $group_id_to_remove)
-    {
-        $user_invitations_meta = get_user_meta($user_id, 'group_invitations', true);
-        if (!is_array($user_invitations_meta)) {
-            $user_invitations_meta = [];
-        }
-        if (in_array((int)$group_id_to_remove, $user_invitations_meta)) { // Cast to int for robust comparison
-            $user_invitations_meta = array_values(array_diff($user_invitations_meta, [(int)$group_id_to_remove]));
-            update_user_meta($user_id, 'group_invitations', $user_invitations_meta);
-        }
     }
 
     /**
@@ -546,42 +520,4 @@ class HWP_User_Groups_Invitations extends HWP_User_Groups_Base
 
         return $email_sent;
     }
-
-    // /**
-    //  * Helper to add a user to a group.
-    //  *
-    //  * @param int $user_id The ID of the user.
-    //  * @param int $group_id The ID of the group.
-    //  */
-    // private function add_user_to_group($user_id, $group_id)
-    // {
-    //     $group_members = get_post_meta($group_id, 'members', true);
-
-    //     if (!is_array($group_members)) {
-    //         $group_members = [];
-    //     }
-    //     if (!in_array((int)$user_id, $group_members)) { // Cast to int for consistency
-    //         $group_members[] = (int)$user_id; // KORRIGIERT: $group_members[] statt $members[]
-    //         update_post_meta($group_id, 'members', $group_members);
-    //         clean_post_cache($group_id);
-    //     }
-    // }
-
-    // /**
-    //  * Helper to check if a user is already a member of a group.
-    //  *
-    //  * @param int $user_id The ID of the user.
-    //  * @param int $group_id The ID of the group.
-    //  * @return bool True if the user is a member, false otherwise.
-    //  */
-    // private function is_user_member_of_group($user_id, $group_id)
-    // {
-    //     $group_members = get_post_meta($group_id, 'members', true);
-
-    //     if (!is_array($group_members)) {
-    //         return false;
-    //     }
-    //     // Ensure comparison with intval for robust checking
-    //     return in_array((int)$user_id, array_map('intval', $group_members));
-    // }
 }

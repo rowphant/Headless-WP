@@ -211,10 +211,77 @@ class HWP_User_Groups_Base
         if (!in_array($user_id, $group_members, true)) { // Use strict comparison
             $group_members[] = $user_id;
             $updated = update_post_meta($group_id, 'members', $group_members);
-            // clean_post_cache($group_id); // Invalidate cache after update
-            return $updated !== false; // Return true on successful update or false on failure
+
+            if (!$updated) {
+                error_log('add_user_to_group: Failed to update group members.');
+                return false;
+            }
         }
+
+        // Add group to user's 'group_member' meta field
+        $user_member_meta = get_user_meta($user_id, 'group_member', true);
+
+        if (!is_array($user_member_meta)) {
+            $user_member_meta = [];
+        }
+        if (!in_array((int)$group_id, $user_member_meta, true)) {
+            $user_member_meta[] = (int)$group_id;
+            $updated = update_user_meta($user_id, 'group_member', $user_member_meta);
+
+            if (!$updated) {
+                error_log('add_user_to_group: Failed to update user group membership.');
+                return false;
+            }
+        }
+
         return true; // User was already a member, consider it a success for idempotency
+    }
+
+    protected function remove_user_from_group($user_id, $group_id)
+    {
+        // Sanitize inputs
+        $user_id = (int)$user_id;
+        $group_id = (int)$group_id;
+
+        if ($user_id <= 0 || $group_id <= 0) {
+            error_log('remove_user_from_group: Invalid user_id or group_id provided.');
+            return false;
+        }
+
+        // Remove user from group
+        $group_members = get_post_meta($group_id, 'members', true);
+
+        if (!is_array($group_members)) {
+            $group_members = [];
+        }
+
+        if (in_array($user_id, $group_members, true)) { // Use strict comparison
+            $group_members = array_diff($group_members, [$user_id]);
+            $updated = update_post_meta($group_id, 'members', $group_members);
+
+            if (!$updated) {
+                error_log('remove_user_from_group: Failed to update group members.');
+                return false;
+            }
+        }
+
+        // Remove group from user's 'group_member' meta field
+        $user_requests_meta = get_user_meta($user_id, 'group_member', true);
+
+        if (!is_array($user_requests_meta)) {
+            $user_requests_meta = [];
+        }
+        if (in_array((int)$group_id, $user_requests_meta, true)) {
+            $user_requests_meta = array_values(array_diff($user_requests_meta, [(int)$group_id]));
+            $updated = update_user_meta($user_id, 'group_member', $user_requests_meta);
+
+            if (!$updated) {
+                error_log('remove_user_from_group: Failed to update user group membership.');
+                return false;
+            }
+        }
+
+        return true; // User was not a member, consider it a success for idempotency
     }
 
     /**
@@ -244,5 +311,62 @@ class HWP_User_Groups_Base
         }
         // Ensure comparison with intval for robust checking
         return in_array($user_id, array_map('intval', $group_members), true); // Use strict comparison
+    }
+
+
+    protected function remove_invitation_from_group_meta($group_id, $identifier_to_remove)
+    {
+        $group_meta_invitations = get_post_meta($group_id, 'invitations', true);
+        if (is_array($group_meta_invitations) && in_array($identifier_to_remove, $group_meta_invitations, true)) {
+            $group_meta_invitations = array_values(array_diff($group_meta_invitations, [$identifier_to_remove]));
+            update_post_meta($group_id, 'invitations', $group_meta_invitations);
+        }
+    }
+
+    // Wenn 'group_invitations' im User-Metafeld Group IDs speichert, dann ist das OK.
+    // Wenn es E-Mails speichern sollte, müsste dieser Teil anders aussehen.
+    protected function remove_invitation_from_user_meta($user_id, $group_id_to_remove)
+    {
+        $user_invitations_meta = get_user_meta($user_id, 'group_invitations', true);
+        if (!is_array($user_invitations_meta)) {
+            $user_invitations_meta = [];
+        }
+        if (in_array((int)$group_id_to_remove, $user_invitations_meta)) { // Cast to int for robust comparison
+            $user_invitations_meta = array_values(array_diff($user_invitations_meta, [(int)$group_id_to_remove]));
+            update_user_meta($user_id, 'group_invitations', $user_invitations_meta);
+        }
+    }
+
+    /**
+     * Removes a user ID from a group's 'requests' meta field.
+     *
+     * @param int $group_id The ID of the group.
+     * @param int $user_id_to_remove The ID of the user to remove from requests.
+     */
+    protected function remove_request_from_group_meta($group_id, $user_id_to_remove)
+    {
+        $group_requests = get_post_meta($group_id, 'requests', true);
+        if (is_array($group_requests) && in_array((int)$user_id_to_remove, $group_requests, true)) {
+            $group_requests = array_values(array_diff($group_requests, [(int)$user_id_to_remove]));
+            update_post_meta($group_id, 'requests', $group_requests);
+        }
+    }
+
+    /**
+     * Removes a group ID from a user's 'group_requests' meta field.
+     *
+     * @param int $user_id The ID of the user.
+     * @param int $group_id_to_remove The ID of the group to remove from user's requests.
+     */
+    protected function remove_request_from_user_meta($user_id, $group_id_to_remove)
+    {
+        $user_requests_meta = get_user_meta($user_id, 'group_requests', true);
+        if (!is_array($user_requests_meta)) {
+            $user_requests_meta = [];
+        }
+        if (in_array((int)$group_id_to_remove, $user_requests_meta, true)) {
+            $user_requests_meta = array_values(array_diff($user_requests_meta, [(int)$group_id_to_remove]));
+            update_user_meta($user_id, 'group_requests', $user_requests_meta);
+        }
     }
 }

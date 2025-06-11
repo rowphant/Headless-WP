@@ -100,7 +100,7 @@ class HWP_User_Groups_REST_API extends HWP_User_Groups_Base
 
                         // Filter and sanitize group IDs
                         $group_ids = is_array($group_ids) ? array_filter(array_map('intval', $group_ids)) : [];
-                        
+
                         // Sort groups by title
                         usort($group_ids, function ($a, $b) {
                             $post_a = get_post($a);
@@ -123,8 +123,14 @@ class HWP_User_Groups_REST_API extends HWP_User_Groups_Base
                                 'slug'           => $group_post->post_name,
                                 'status'         => $group_post->post_status,
                                 'author'         => intval($group_post->post_author),
+                                'author'         => [
+                                    'id'   => intval($group_post->post_author),
+                                    'name' => get_the_author_meta('display_name', $group_post->post_author),
+                                    'email' => get_the_author_meta('user_email', $group_post->post_author),
+                                ],
                                 'admins'         => get_post_meta($group_id, 'admins', true),
                                 'members'        => get_post_meta($group_id, 'members', true),
+                                'member_count'   => count((array)get_post_meta($group_id, 'members', true)),
                             ];
 
                             $current_user_id = get_current_user_id();
@@ -135,7 +141,35 @@ class HWP_User_Groups_REST_API extends HWP_User_Groups_Base
 
 
                             if ($is_current_user_admin_wp || $is_author_of_group || $is_admin_of_group) {
-                                $group_detail['requests'] = get_post_meta($group_id, 'requests', true);
+                                // Requests details
+                                $group_requests = get_post_meta($group_id, 'requests', true);
+                                $group_requests_object = [];
+                                if (is_array($group_requests)) {
+                                    foreach ($group_requests as $request_user_id) {
+                                        $group_requests_object[] = [
+                                            'id' => $request_user_id,
+                                            'name' => get_the_author_meta('display_name', $request_user_id),
+                                            'email' => get_the_author_meta('user_email', $request_user_id),
+                                        ];
+                                    }
+                                }
+                                $group_detail['requests'] = $group_requests_object;
+                                
+                                // Members
+                                $group_members = get_post_meta($group_id, 'members', true);
+                                $group_members_object = [];
+                                if (is_array($group_members)) {
+                                    foreach ($group_members as $user_id) {
+                                        $group_members_object[] = [
+                                            'id' => $user_id,
+                                            'name' => get_the_author_meta('display_name', $user_id),
+                                            'email' => get_the_author_meta('user_email', $user_id),
+                                        ];
+                                    }
+                                }
+                                $group_detail['members'] = $group_members_object;
+
+                                // $group_detail['requests'] = get_post_meta($group_id, 'requests', true);
                                 $raw_invitations = get_post_meta($group_id, 'invitations', true);
                                 $group_detail['invitations'] = is_array($raw_invitations) ? array_map('sanitize_email', $raw_invitations) : [];
                             } else {
