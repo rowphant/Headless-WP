@@ -369,4 +369,15 @@ class HWP_User_Groups_Base
             update_user_meta($user_id, 'group_requests', $user_requests_meta);
         }
     }
+
+    protected function getUserDetails($user_id)
+    {
+        $user = [
+            'id' => $user_id,
+            'name' => get_the_author_meta('display_name', $user_id),
+            'email' => get_the_author_meta('user_email', $user_id),
+        ];
+
+        return $user;
+    }
 }

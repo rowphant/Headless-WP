@@ -141,20 +141,16 @@ class HWP_User_Groups_REST_API extends HWP_User_Groups_Base
 
 
                             if ($is_current_user_admin_wp || $is_author_of_group || $is_admin_of_group) {
-                                // Requests details
-                                $group_requests = get_post_meta($group_id, 'requests', true);
-                                $group_requests_object = [];
-                                if (is_array($group_requests)) {
-                                    foreach ($group_requests as $request_user_id) {
-                                        $group_requests_object[] = [
-                                            'id' => $request_user_id,
-                                            'name' => get_the_author_meta('display_name', $request_user_id),
-                                            'email' => get_the_author_meta('user_email', $request_user_id),
-                                        ];
+                                // Admins
+                                $group_admins = get_post_meta($group_id, 'admins', true);
+                                $group_admins_object = [];
+                                if (is_array($group_admins)) {
+                                    foreach ($group_admins as $user_id) {
+                                        $group_admins_object[] = $this->getUserDetails($user_id);
                                     }
                                 }
-                                $group_detail['requests'] = $group_requests_object;
-                                
+                                $group_detail['admins'] = $group_admins_object;
+
                                 // Members
                                 $group_members = get_post_meta($group_id, 'members', true);
                                 $group_members_object = [];
@@ -168,6 +164,20 @@ class HWP_User_Groups_REST_API extends HWP_User_Groups_Base
                                     }
                                 }
                                 $group_detail['members'] = $group_members_object;
+                                
+                                // Requests details
+                                $group_requests = get_post_meta($group_id, 'requests', true);
+                                $group_requests_object = [];
+                                if (is_array($group_requests)) {
+                                    foreach ($group_requests as $request_user_id) {
+                                        $group_requests_object[] = [
+                                            'id' => $request_user_id,
+                                            'name' => get_the_author_meta('display_name', $request_user_id),
+                                            'email' => get_the_author_meta('user_email', $request_user_id),
+                                        ];
+                                    }
+                                }
+                                $group_detail['requests'] = $group_requests_object;
 
                                 // $group_detail['requests'] = get_post_meta($group_id, 'requests', true);
                                 $raw_invitations = get_post_meta($group_id, 'invitations', true);
