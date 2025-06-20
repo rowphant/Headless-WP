@@ -3,7 +3,7 @@
 Plugin Name: Headless WP
 Description: This plugin was created to optimize Wordpress for use with SPA frameworks like react, vue.js, angular, svelte etc.
 Plugin URI: https://github.com/rowphant/WP-Headless
-Version: 0.0.10
+Version: 0.0.11
 Requires at least: 6.0
 License: MIT
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -39,6 +39,10 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-reset-password.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-user-image.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-user-image.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-user-registration.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-public-post-types-api.php';
+
+// Advanced Custom Fields
+require_once plugin_dir_path(__FILE__) . 'includes/acf/class-acf-fields.php';
 
 // Include user groups classes
 require_once plugin_dir_path(__FILE__) . 'includes/user-groups/class-user-groups-base.php';
@@ -50,7 +54,6 @@ require_once plugin_dir_path(__FILE__) . 'includes/user-groups/class-user-groups
 require_once plugin_dir_path(__FILE__) . 'includes/user-groups/class-user-groups-members.php';
 require_once plugin_dir_path(__FILE__) . 'includes/user-groups/class-user-groups-admins.php';
 
-
 // Initialisierung der Klassen
 function run_wp_headless_gateway() {
     $hwp_options = new HWP_Options();
@@ -59,6 +62,8 @@ function run_wp_headless_gateway() {
     $hwp_reset_password = new HWP_Reset_Password();
     $hwp_user_image = new HWP_User_Image();
     $hwp_api_user_image = new HWP_Api_User_Image();
+    $hwp_public_post_types_api = new HWP_Public_Post_Types_API();
+    $hwp_acf_fields = new HWP_ACF_Fields();
     
     // User Groups
     $hwp_user_groups_admin = new HWP_User_Groups_Admin();
@@ -69,6 +74,9 @@ function run_wp_headless_gateway() {
     $hwp_user_groups_requests = new HWP_User_Groups_Requests();
     $hwp_user_groups_members = new HWP_User_Groups_Members();
     $hwp_user_groups_admin = new HWP_User_Groups_Admins();
+    
 }
 
 add_action('plugins_loaded', 'run_wp_headless_gateway');
+
+
